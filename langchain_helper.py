@@ -9,7 +9,7 @@ from langchain.chains import RetrievalQA
 from dotenv import load_dotenv
 
 load_dotenv()
-llm=GooglePalm(google_api_key=os.environ["GOOGLE_API_KEY"],temperature=0)
+llm=GooglePalm(google_api_key=os.environ["GOOGLE_API_KEY"],temperature=0.4)
 
 google_palm_embeddings = GooglePalmEmbeddings(google_api_key=os.environ["GOOGLE_API_KEY"])
 # vector_file_path="faiss_index"
@@ -28,8 +28,8 @@ def get_qa_chain():
 
     prompt_template = """
     Given the following context and a question, generate an answer based on this context only.
-    In the answer try to provide as much text as possible from "response" section in the source document context without making much changes.
-    If prompt related to my personal details and the answer is not found in the context, kindly state "I don't know." let them know to contact me personally by sharing my linkedin and github handle present in response
+    In the answer try to provide as much text as possible from "response" section 
+    If prompt related to my personal details and the answer is not found in the context,let them know to contact me personally by sharing my linkedin and github handle
 
     CONTEXT: {context}
 
