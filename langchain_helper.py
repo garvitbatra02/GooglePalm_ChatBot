@@ -1,33 +1,35 @@
 import os
 from langchain.llms import GooglePalm
-from dotenv import load_dotenv
+from langchain.chains import RetrievalQA
+from langchain.embeddings import GooglePalmEmbeddings
 from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.embeddings import HuggingFaceInstructEmbeddings
-from langchain.vectorstores import FAISS
+from langchain.vectorstores import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+from dotenv import load_dotenv
 
 load_dotenv()
 llm=GooglePalm(google_api_key=os.environ["GOOGLE_API_KEY"],temperature=0)
 
-
-
-instructor_embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large")
-vector_file_path="faiss_index"
+google_palm_embeddings = GooglePalmEmbeddings(google_api_key=os.environ["GOOGLE_API_KEY"])
+# vector_file_path="faiss_index"
 
 def create_vector_db():
     loader = CSVLoader(file_path='data.csv', source_column="prompt")
     data = loader.load()
-    vectordb = FAISS.from_documents(documents=data,embedding=instructor_embeddings)
-    vectordb.save_local(vector_file_path)
+    vectordb = Chroma.from_documents(data,
+                           embedding=google_palm_embeddings,
+                           persist_directory='./chromadb')
+    vectordb.persist()
 
 def get_qa_chain():
-    vectordb=FAISS.load_local(vector_file_path,instructor_embeddings)
-    retriever=vectordb.as_retriever(score_threshold=0.7)
+    vectorDatabase = Chroma(persist_directory="./chromadb",embedding_function=google_palm_embeddings)
+    retriever = vectorDatabase.as_retriever(score_threshold = 0.7)
 
     prompt_template = """
-    Always strictly try to get any related information regarding me in the data given to you(numbers specifically), otherwise just tell you dont know and they can reach out to me on my social handles links.
-   just let them know my social linkedin or github links or other handles (available in the data) to personally talk to me regarding that. Always give answer as third person for Garvit Batra
+    Given the following context and a question, generate an answer based on this context only.
+    In the answer try to provide as much text as possible from "response" section in the source document context without making much changes.
+    If prompt related to my personal details and the answer is not found in the context, kindly state "I don't know." let them know to contact me personally by sharing my linkedin and github handle present in response
 
     CONTEXT: {context}
 
@@ -46,11 +48,12 @@ def get_qa_chain():
                                 input_key="query",
                                 return_source_documents=True,
                                 chain_type_kwargs=chain_type_kwargs)
-    # modified_chain("Tell me about coding skills of Garvit Batra")
+    # print(modified_chain("Explain me how Garvit Batra would say Tell me something about yourself?"))
     return modified_chain
 
-# if __name__ == "__main__":
-#     chain=get_qa_chain()
-#     print(chain("Tell me about coding skills of Garvit Batra"))
+if __name__ == "__main__":
+    # create_vector_db()
+    chain=get_qa_chain()
+    # print(chain("Tell me about coding skills of Garvit Batra"))
     
 
