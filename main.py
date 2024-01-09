@@ -5,9 +5,9 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 st.title("Garvit Batra Q/A bot🌱")
-# btn = st.button("Create Knowledgebase")
-# if btn:
-create_vector_db()
+btn = st.button("Create Knowledgebase")
+if btn:
+    create_vector_db()
 
 question = st.text_input("Question: ")
 
